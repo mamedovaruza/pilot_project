@@ -4,10 +4,16 @@ import { useState } from 'react';
 import { ReactTabulator } from 'react-tabulator'
 import { Modal, Form, Input, Select } from 'antd';
 import "tabulator-tables/dist/css/tabulator.min.css";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
+import { Pie, Bar } from 'react-chartjs-2';
+
+ChartJS.register(Title, Tooltip, Legend, CategoryScale, LinearScale, BarElement, ArcElement);
 
 function Tabel(props) {
 	const [excelData, setExcelData] = useState([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isAnalysis1Open, setIsAnalysis1Open] = useState(false)
+	const [isAnalysis2Open, setIsAnalysis2Open] = useState(false)
 	const [form] = Form.useForm();
 
 	const handleChange = async (e) => {
@@ -17,19 +23,15 @@ function Tabel(props) {
 		const ws = wb.Sheets[wb.SheetNames[0]];
 		const jsonArr = XLSX.utils.sheet_to_json(ws)
 
-		// console.log({ jsonArr })
 		setExcelData(jsonArr);
 	}
-
-	var printIcon = function (cell, formatterParams, onRendered) {
-		return "<i class='fa-solid fa-pencil'></i>";
-	};
 
 	const columns = [
 		{ title: "ID", field: "id", hozAlign: "left", sorter: "number", editor: "input", headerFilter: true },
 		{ title: "LEN", field: "len", hozAlign: "left", sorter: "number", headerFilter: true },
 		{ title: "WKT", field: "wkt", hozAlign: "left", headerFilter: true },
 		{ title: "STATUS", field: "status", hozAlign: "left", headerFilter: true },
+		// edit data action
 		{
 			formatter: () => "<i class='fa fa-solid fa-pencil'></i>", width: 40, hozAlign: "center", headerSort: false,
 			cellClick: function (e, cell) {
@@ -37,16 +39,18 @@ function Tabel(props) {
 				const clickedRow = excelData.find(item => (item.id === clickedId))
 				form.setFieldValue("id", clickedRow.id)
 				form.setFieldValue("status", clickedRow.status)
-				form.setFieldValue("len",clickedRow.len)
+				form.setFieldValue("len", clickedRow.len)
 				setIsModalOpen(true)
 			}
 		},
+		// delete data action
 		{
 			formatter: () => "<i class='fa fa-solid fa-trash'></i>", width: 40, hozAlign: "center", headerSort: false,
 			cellClick: function (e, cell) {
 				cell.getRow().delete()
 			}
 		},
+		// show map action
 		{
 			formatter: () => "<i class='fa fa-solid fa-map-pin'></i>", width: 40, hozAlign: "center", headerSort: false,
 			cellClick: function (e, cell) {
@@ -56,6 +60,7 @@ function Tabel(props) {
 	]
 
 	const onFinish = (values) => {
+		// edit data
 		if (typeof values.id == "number" || values.id > 0) {
 			let newExcelData = excelData.map(item => {
 				if (item.id === values.id) {
@@ -70,7 +75,9 @@ function Tabel(props) {
 				}
 			})
 			setExcelData(newExcelData)
-		} else {
+		}
+		// add new data
+		else {
 			const lastId = excelData
 				.map(item => item.id)
 				.sort((a, b) => a - b)
@@ -106,6 +113,99 @@ function Tabel(props) {
 	const handleCancel = () => {
 		setIsModalOpen(false);
 	};
+
+	const showAnalysis1 = () => {
+		setIsAnalysis1Open(!isAnalysis1Open)
+	}
+
+	const showAnalysis2 = () => {
+		setIsAnalysis2Open(!isAnalysis2Open)
+	}
+
+	const status0 = () => {
+		let count = 0
+		excelData.map(item => item.status === 0 ? count++ : null)
+		return count
+	}
+
+	const status1 = () => {
+		let count = 0
+		excelData.map(item => item.status === 1 ? count++ : null)
+		return count
+	}
+
+	const status2 = () => {
+		let count = 0
+		excelData.map(item => item.status === 2 ? count++ : null)
+		return count
+	}
+
+	const dataPieChart = {
+		labels: [0, 1, 2],
+		datasets: [
+			{
+				label: '# of Votes',
+				data: [status0(), status1(), status2()],
+				backgroundColor: [
+					'rgb(255, 99, 132)',
+					'rgb(54, 162, 235)',
+					'rgb(255, 205, 86)',
+				],
+				borderColor: [
+					'rgb(255, 99, 132)',
+					'rgb(54, 162, 235)',
+					'rgb(255, 205, 86)',
+				],
+				borderWidth: 1,
+			},
+		],
+	};
+
+	const len0 = () => {
+		const len = []
+		excelData.map(item => item.status === 0 ? len.push(item.len) : 0)
+		if (excelData.length !== 0) {
+			const count = len.reduce((total, value) => total + value)
+			return count
+		}
+	}
+
+	const len1 = () => {
+		const len = []
+		excelData.map(item => item.status === 1 ? len.push(item.len) : 0)
+		if (excelData.length !== 0) {
+			const count = len.reduce((total, value) => total + value)
+			return count
+		}
+	}
+
+	const len2 = () => {
+		const len = []
+		excelData.map(item => item.status === 2 ? len.push(item.len) : 0)
+		if (excelData.length !== 0) {
+			const count = len.reduce((total, value) => total + value)
+			return count
+		}
+	}
+
+	const dataBarChart = {
+		labels: [0, 1, 2],
+		datasets: [
+			{
+				label: '# of Votes',
+				data: [len0(), len1(), len2()],
+				backgroundColor: 'rgb(255, 0, 0)',
+			},
+		],
+	};
+
+	const options = {
+		scales: {
+			y: {
+				beginAtZero: true
+			}
+		}
+	}
 
 	return (<>
 		<input type="file" onChange={handleChange} />
@@ -154,6 +254,21 @@ function Tabel(props) {
 			}}
 		/>
 
+		<button onClick={showAnalysis1}>Analiz - 1</button>
+		<button onClick={showAnalysis2}>Analiz - 2</button>
+
+		{isAnalysis1Open ?
+			<div style={{ width: "30%" }}>
+				<Pie data={dataPieChart} />
+			</div>
+			: null
+		}
+		{isAnalysis2Open ?
+			<div style={{ width: "30%" }}>
+				<Bar data={dataBarChart} options={options} />
+			</div>
+			: null
+		}
 	</>);
 }
 
