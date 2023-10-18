@@ -3,14 +3,11 @@ import XLSX from "xlsx"
 import { useState } from 'react';
 import { ReactTabulator } from 'react-tabulator'
 import { Modal, Form, Input, Select } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import "tabulator-tables/dist/css/tabulator.min.css";
-import { values } from 'lodash';
 
 function Tabel(props) {
 	const [excelData, setExcelData] = useState([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [newData, setNewData] = useState([])
 	const [form] = Form.useForm();
 
 	const handleChange = async (e) => {
@@ -24,7 +21,7 @@ function Tabel(props) {
 		setExcelData(jsonArr);
 	}
 
-	var printIcon = function (cell, formatterParams, onRendered) { 
+	var printIcon = function (cell, formatterParams, onRendered) {
 		return "<i class='fa-solid fa-pencil'></i>";
 	};
 
@@ -34,26 +31,24 @@ function Tabel(props) {
 		{ title: "WKT", field: "wkt", hozAlign: "left", headerFilter: true },
 		{ title: "STATUS", field: "status", hozAlign: "left", headerFilter: true },
 		{
-			formatter: printIcon, width: 40, hozAlign: "center", headerSort: false,
+			formatter: () => "<i class='fa fa-solid fa-pencil'></i>", width: 40, hozAlign: "center", headerSort: false,
 			cellClick: function (e, cell) {
 				const clickedId = cell.getRow().getData().id
 				const clickedRow = excelData.find(item => (item.id === clickedId))
-				console.log(clickedRow)
-
-				// setIsModalOpen(true)
-				// console.log(newData)
-
-				// cell.getRow().update({ ...excelData, "len": newData.len, "status": newData.status })
+				form.setFieldValue("id", clickedRow.id)
+				form.setFieldValue("status", clickedRow.status)
+				form.setFieldValue("len",clickedRow.len)
+				setIsModalOpen(true)
 			}
 		},
 		{
-			formatter: <DeleteOutlined />, width: 40, hozAlign: "center", headerSort: false,
+			formatter: () => "<i class='fa fa-solid fa-trash'></i>", width: 40, hozAlign: "center", headerSort: false,
 			cellClick: function (e, cell) {
 				cell.getRow().delete()
 			}
 		},
 		{
-			formatter: <DeleteOutlined />, width: 40, hozAlign: "center", headerSort: false,
+			formatter: () => "<i class='fa fa-solid fa-map-pin'></i>", width: 40, hozAlign: "center", headerSort: false,
 			cellClick: function (e, cell) {
 				// cell.getRow().delete()
 			}
@@ -61,30 +56,51 @@ function Tabel(props) {
 	]
 
 	const onFinish = (values) => {
-		setNewData(values)
-
-		const lastId = excelData
-			.map(item => item.id)
-			.sort((a, b) => a - b)
-			.pop()
-
-		setExcelData([...excelData,
-		{
-			status: values.status,
-			len: values.len,
-			id: lastId + 1,
-			wkt: ""
+		if (typeof values.id == "number" || values.id > 0) {
+			let newExcelData = excelData.map(item => {
+				if (item.id === values.id) {
+					return {
+						id: item.id,
+						status: values.status,
+						len: values.len,
+						wkt: item.wkt
+					}
+				} else {
+					return item
+				}
+			})
+			setExcelData(newExcelData)
+		} else {
+			const lastId = excelData
+				.map(item => item.id)
+				.sort((a, b) => a - b)
+				.pop()
+			setExcelData([...excelData,
+			{
+				status: values.status,
+				len: values.len,
+				id: lastId + 1,
+				wkt: ""
+			}
+			])
 		}
-		])
 	}
 
 	const showModal = () => {
+		form.setFieldValue("id", null)
+		form.setFieldValue("len", null)
+		form.setFieldValue("status", null)
 		setIsModalOpen(true);
 	};
 
-	const handleOk = () => {
-		setIsModalOpen(false);
-		form.submit();
+	const handleOk = async () => {
+		try {
+			await form.validateFields()
+			setIsModalOpen(false);
+			form.submit();
+		} catch (error) {
+			console.log(error)
+		}
 	};
 
 	const handleCancel = () => {
@@ -101,6 +117,9 @@ function Tabel(props) {
 				form={form}
 				onFinish={onFinish}
 			>
+				<Form.Item name="id" hidden={true}>
+					<Input type='number' />
+				</Form.Item>
 				<Form.Item
 					name="len" rules={[{ required: true, message: "Please input Len!" }]}
 					label="Len məlumatlarını daxil edin:"
