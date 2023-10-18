@@ -3,11 +3,14 @@ import XLSX from "xlsx"
 import { useState } from 'react';
 import { ReactTabulator } from 'react-tabulator'
 import { Modal, Form, Input, Select } from 'antd';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import "tabulator-tables/dist/css/tabulator.min.css";
+import { values } from 'lodash';
 
 function Tabel(props) {
 	const [excelData, setExcelData] = useState([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [newData, setNewData] = useState([])
 	const [form] = Form.useForm();
 
 	const handleChange = async (e) => {
@@ -17,19 +20,62 @@ function Tabel(props) {
 		const ws = wb.Sheets[wb.SheetNames[0]];
 		const jsonArr = XLSX.utils.sheet_to_json(ws)
 
-		console.log({ jsonArr })
+		// console.log({ jsonArr })
 		setExcelData(jsonArr);
 	}
 
+	var printIcon = function (cell, formatterParams, onRendered) { 
+		return "<i class='fa-solid fa-pencil'></i>";
+	};
+
 	const columns = [
-		{ title: "ID", field: "id", hozAlign: "left", sorter: "number", headerFilter: true },
+		{ title: "ID", field: "id", hozAlign: "left", sorter: "number", editor: "input", headerFilter: true },
 		{ title: "LEN", field: "len", hozAlign: "left", sorter: "number", headerFilter: true },
 		{ title: "WKT", field: "wkt", hozAlign: "left", headerFilter: true },
 		{ title: "STATUS", field: "status", hozAlign: "left", headerFilter: true },
+		{
+			formatter: printIcon, width: 40, hozAlign: "center", headerSort: false,
+			cellClick: function (e, cell) {
+				const clickedId = cell.getRow().getData().id
+				const clickedRow = excelData.find(item => (item.id === clickedId))
+				console.log(clickedRow)
+
+				// setIsModalOpen(true)
+				// console.log(newData)
+
+				// cell.getRow().update({ ...excelData, "len": newData.len, "status": newData.status })
+			}
+		},
+		{
+			formatter: <DeleteOutlined />, width: 40, hozAlign: "center", headerSort: false,
+			cellClick: function (e, cell) {
+				cell.getRow().delete()
+			}
+		},
+		{
+			formatter: <DeleteOutlined />, width: 40, hozAlign: "center", headerSort: false,
+			cellClick: function (e, cell) {
+				// cell.getRow().delete()
+			}
+		},
 	]
 
 	const onFinish = (values) => {
-		console.log(values)
+		setNewData(values)
+
+		const lastId = excelData
+			.map(item => item.id)
+			.sort((a, b) => a - b)
+			.pop()
+
+		setExcelData([...excelData,
+		{
+			status: values.status,
+			len: values.len,
+			id: lastId + 1,
+			wkt: ""
+		}
+		])
 	}
 
 	const showModal = () => {
@@ -59,7 +105,7 @@ function Tabel(props) {
 					name="len" rules={[{ required: true, message: "Please input Len!" }]}
 					label="Len məlumatlarını daxil edin:"
 				>
-					<Input />
+					<Input type='number' />
 				</Form.Item>
 				<Form.Item
 					name="status" rules={[{ required: true, message: "Please select Status!" }]}
@@ -81,6 +127,7 @@ function Tabel(props) {
 				pagination: "local",
 				paginationSize: 20,
 				maxHeight: "100%",
+				placeholder: "No Data Set",
 				initialSort: [{
 					column: "id",
 					dir: "desc"
