@@ -267,8 +267,6 @@ function Tabel(props) {
 			}}
 		/>
 
-		<LineString coordinates={selectedWKT.coordinates} />
-
 		<button onClick={showAnalysis1}>Analiz - 1</button>
 		<button onClick={showAnalysis2}>Analiz - 2</button>
 
