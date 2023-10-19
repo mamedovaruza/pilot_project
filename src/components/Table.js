@@ -14,6 +14,7 @@ function Tabel(props) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isAnalysis1Open, setIsAnalysis1Open] = useState(false)
 	const [isAnalysis2Open, setIsAnalysis2Open] = useState(false)
+	const [selectedWKT, setSelectedWKT] = useState({})
 	const [form] = Form.useForm();
 
 	const handleChange = async (e) => {
@@ -23,11 +24,11 @@ function Tabel(props) {
 		const ws = wb.Sheets[wb.SheetNames[0]];
 		const jsonArr = XLSX.utils.sheet_to_json(ws)
 
-		setExcelData(jsonArr);
+		setExcelData(jsonArr)
 	}
 
 	const columns = [
-		{ title: "ID", field: "id", hozAlign: "left", sorter: "number", editor: "input", headerFilter: true },
+		{ title: "ID", field: "id", hozAlign: "left", sorter: "number", headerFilter: true },
 		{ title: "LEN", field: "len", hozAlign: "left", sorter: "number", headerFilter: true },
 		{ title: "WKT", field: "wkt", hozAlign: "left", headerFilter: true },
 		{ title: "STATUS", field: "status", hozAlign: "left", headerFilter: true },
@@ -37,9 +38,11 @@ function Tabel(props) {
 			cellClick: function (e, cell) {
 				const clickedId = cell.getRow().getData().id
 				const clickedRow = excelData.find(item => (item.id === clickedId))
+
 				form.setFieldValue("id", clickedRow.id)
 				form.setFieldValue("status", clickedRow.status)
 				form.setFieldValue("len", clickedRow.len)
+
 				setIsModalOpen(true)
 			}
 		},
@@ -54,10 +57,17 @@ function Tabel(props) {
 		{
 			formatter: () => "<i class='fa fa-solid fa-map-pin'></i>", width: 40, hozAlign: "center", headerSort: false,
 			cellClick: function (e, cell) {
-				// cell.getRow().delete()
+				const { parse } = require('wkt');
+
+				const clickedId = cell.getRow().getData().id
+				const clickedRow = excelData.find(item => (item.id === clickedId))
+
+				setSelectedWKT(parse(clickedRow.wkt));
 			}
 		},
 	]
+
+	// console.log(selectedWKT.coordinates);
 
 	const onFinish = (values) => {
 		// edit data
@@ -207,6 +217,9 @@ function Tabel(props) {
 		}
 	}
 
+	const points = [
+
+	]
 	return (<>
 		<input type="file" onChange={handleChange} />
 		<button onClick={showModal} >Add New Data</button>
@@ -253,6 +266,8 @@ function Tabel(props) {
 				}]
 			}}
 		/>
+
+		<LineString coordinates={selectedWKT.coordinates} />
 
 		<button onClick={showAnalysis1}>Analiz - 1</button>
 		<button onClick={showAnalysis2}>Analiz - 2</button>
