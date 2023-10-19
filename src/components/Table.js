@@ -67,7 +67,7 @@ function Tabel(props) {
 		},
 	]
 
-	// console.log(selectedWKT.coordinates);
+	console.log(selectedWKT.coordinates);
 
 	const onFinish = (values) => {
 		// edit data
@@ -217,9 +217,6 @@ function Tabel(props) {
 		}
 	}
 
-	const points = [
-
-	]
 	return (<>
 		<input type="file" onChange={handleChange} />
 		<button onClick={showModal} >Add New Data</button>
@@ -270,18 +267,20 @@ function Tabel(props) {
 		<button onClick={showAnalysis1}>Analiz - 1</button>
 		<button onClick={showAnalysis2}>Analiz - 2</button>
 
-		{isAnalysis1Open ?
-			<div style={{ width: "30%" }}>
-				<Pie data={dataPieChart} />
-			</div>
-			: null
-		}
-		{isAnalysis2Open ?
-			<div style={{ width: "30%" }}>
-				<Bar data={dataBarChart} options={options} />
-			</div>
-			: null
-		}
+		<div style={{display: "flex"}}>
+			{isAnalysis1Open ?
+				<div style={{ width: "20%" }}>
+					<Pie data={dataPieChart} />
+				</div>
+				: null
+			}
+			{isAnalysis2Open ?
+				<div style={{ width: "30%" }}>
+					<Bar data={dataBarChart} options={options} />
+				</div>
+				: null
+			}
+		</div>
 	</>);
 }
 
